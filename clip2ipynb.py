@@ -51,14 +51,29 @@ def md2ipynb(text):
                 if s in text[start:line_end].split():
                     ignore = True
                     break
-            start = line_end
 
             if ignore:
+                start = line_end
                 md = text[start:end].strip()
                 cell = add_md(md,True)
             else:
-                codelist=text[start:end].strip().splitlines(True)
+                
+                last_LF = text.rfind(LF, 0, start) 
+                if last_LF == -1:
+                    ignore_chars = start -3
+                else:
+                    ignore_chars = start -last_LF -3 - len(LF)
+
+                start = line_end
+
+                codelist=text[start:end].strip('\r\n').splitlines(True)
+                
+                if ignore_chars:
+                    codelist = [t[ignore_chars:] for t in codelist]
+
                 pre_type = ''
+                in_code = True
+
                 if codelist[0].startswith('>>>'):
                     pre_type = 'python'
                     sep_char = ' '
@@ -67,9 +82,13 @@ def md2ipynb(text):
                     pre_type = 'ipython'
                     sep_char = ':'
                     pre_char = 'In '
+                if codelist[0].startswith('Out'):
+                    pre_type = 'ipython'
+                    sep_char = ':'
+                    pre_char = 'In '
+                    in_code = False
                 
                 if pre_type:
-                    in_code = True
                     code = ''
                     for t in codelist:
                         pre ,sep, others = t.partition(sep_char)
@@ -98,7 +117,7 @@ def md2ipynb(text):
                             add_md(code,True)            
 
                 else: 
-                    code = text[start:end]
+                    code = ''.join(codelist)
                     add_code(code)
         else:
             md = text[start:end]
@@ -116,7 +135,7 @@ def md2ipynb(text):
 def monitor_clipboard():
 
     if  data.hasHtml(): 
-        text=html2md(data.html(),attrs = True)
+        text=html2md(data.html())
         ipynb=md2ipynb(text)
         output_file = 'notebook' + datetime.now().strftime("%y%m%d%H%M%S")+'.ipynb'
         fp=open(output_file, 'w')
