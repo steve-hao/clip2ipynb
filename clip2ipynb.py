@@ -43,6 +43,11 @@ def md2ipynb(text):
         end = text.find('```',start)
         if end == -1:
             end = len(text)
+        else:
+            if not text[start:end].strip():
+                start = end + 3
+                iscode = not iscode
+                continue
 
         if iscode:
             ignore = False
@@ -82,7 +87,7 @@ def md2ipynb(text):
                     pre_type = 'ipython'
                     sep_char = ':'
                     pre_char = 'In '
-                if codelist[0].startswith('Out'):
+                if codelist[0].startswith('Out['):
                     pre_type = 'ipython'
                     sep_char = ':'
                     pre_char = 'In '
@@ -100,7 +105,7 @@ def md2ipynb(text):
                             else:
                                 add_code(code) 
                                 in_code = False
-                                code = others if pre.startswith('Out') else t
+                                code = others if pre.startswith('Out[') else t
                         else:
                             if pre.startswith(pre_char):
                                 add_md(code,True) 
