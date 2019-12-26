@@ -9,6 +9,20 @@ import json
 
 ignore_class =['result']
 
+options = {
+    'ignore_emphasis': False,   
+    'ignore_images': False, 
+    'ignore_links': False,
+    'def_list': True,   
+    'table': True, 
+    'strikethrough': True, 
+    'attrs': False, 
+    'ul_style_dash': False, 
+    'em_style_asterisk': False, 
+    'ignore_list': [],
+    'code_class': 'example_code'
+        }
+
 def md2ipynb(text):
     def add_code(code):
         cell = {}
@@ -140,7 +154,7 @@ def md2ipynb(text):
 def monitor_clipboard():
 
     if  data.hasHtml(): 
-        text=html2md(data.html())
+        text=html2md(data.html(), **options)
         ipynb=md2ipynb(text)
         output_file = 'notebook' + datetime.now().strftime("%y%m%d%H%M%S")+'.ipynb'
         fp=open(output_file, 'w')
