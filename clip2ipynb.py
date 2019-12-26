@@ -60,7 +60,7 @@ def md2ipynb(text):
             if ignore:
                 start = line_end
                 md = text[start:end].strip()
-                cell = add_md(md,True)
+                add_md(md,True)
             else:
                 
                 last_LF = text.rfind(LF, 0, start) 
@@ -126,7 +126,7 @@ def md2ipynb(text):
                     add_code(code)
         else:
             md = text[start:end]
-            cell = add_md(md)
+            add_md(md)
 
         start = end + 3
         if start >= len(text) :
