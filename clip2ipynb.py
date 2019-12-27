@@ -43,52 +43,49 @@ def md2ipynb(text):
         ipynb['cells'].append(cell)
 
     ipynb = {'nbformat': 4, 'nbformat_minor': 1, 'cells': [], 'metadata': {}}
+    ident = 0
+
+    text = text.strip().replace(LF+':    ',LF+'+ ')
 
     if text.startswith('```'):
         iscode = True 
-        start = 3
+        text = text[3:]
     else:
         iscode = False
-        start = 0
 
-    loop = True
+    if text.endswith('```'):
+        text = text[0:-3]
 
-    while loop:
-        end = text.find('```',start)
-        if end == -1:
-            end = len(text)
+    tlist = text.split('```')
+
+    for t in tlist:
+
+        if not iscode:
+
+            t,ident_char = t.rsplit(LF,1)
+            ident = len(ident_char)
+            if t.strip():
+                add_md(t)
         else:
-            if not text[start:end].strip():
-                start = end + 3
-                iscode = not iscode
-                continue
-
-        if iscode:
+  
             ignore = False
-            line_end = text.find(LF,start)
+            firstline,t = t.split(LF,1)
+
             for s in ignore_class:
-                if s in text[start:line_end].split():
+                if s in firstline.split():
                     ignore = True
                     break
 
             if ignore:
-                start = line_end
-                md = text[start:end].strip()
-                add_md(md,True)
+
+                add_md(t,True)
+
             else:
-                
-                last_LF = text.rfind(LF, 0, start) 
-                if last_LF == -1:
-                    ignore_chars = start -3
-                else:
-                    ignore_chars = start -last_LF -3 - len(LF)
 
-                start = line_end
-
-                codelist=text[start:end].strip('\r\n').splitlines(True)
+                codelist=t.strip('\r\n').splitlines(True)
                 
-                if ignore_chars:
-                    codelist = [t[ignore_chars:] for t in codelist]
+                if ident:
+                    codelist = [t[ident:] for t in codelist]
 
                 pre_type = ''
                 in_code = True
@@ -107,10 +104,16 @@ def md2ipynb(text):
                     pre_char = 'In '
                     in_code = False
                 
-                if pre_type:
+                if not pre_type:
+            
+                    code = ''.join(codelist)
+                    add_code(code)
+            
+                else: 
+            
                     code = ''
-                    for t in codelist:
-                        pre ,sep, others = t.partition(sep_char)
+                    for c in codelist:
+                        pre ,sep, others = c.partition(sep_char)
 
                         if in_code:
 
@@ -119,15 +122,14 @@ def md2ipynb(text):
                             else:
                                 add_code(code) 
                                 in_code = False
-                                code = others if pre.startswith('Out[') else t
+                                code = others if pre.startswith('Out[') else c
                         else:
                             if pre.startswith(pre_char):
                                 add_md(code,True) 
                                 in_code = True
                                 code = others
                             else:
-                                code += others if pre.startswith('Out') else t
-
+                                code += others if pre.startswith('Out') else c
                                 
                     if code:
                         if in_code:
@@ -135,16 +137,6 @@ def md2ipynb(text):
                         else:
                             add_md(code,True)            
 
-                else: 
-                    code = ''.join(codelist)
-                    add_code(code)
-        else:
-            md = text[start:end]
-            add_md(md)
-
-        start = end + 3
-        if start >= len(text) :
-            loop = False
         iscode = not iscode
 
     return ipynb
